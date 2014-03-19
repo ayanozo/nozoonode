@@ -1,61 +1,36 @@
+
 /**
  * Module dependencies.
- * 12345
- * 67890
- * 112233
  */
 
-// Client
-  // Server
-  var log = console.log;
-
 var express = require('express');
+var routes = require('./routes');
+var user = require('./routes/user');
+var http = require('http');
+var path = require('path');
 
-var app = module.exports = express.createServer();
+var app = express();
 
-// Configuration
+// all environments
+app.set('port', process.env.PORT || 3000);
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+app.use(express.favicon());
+app.use(express.logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded());
+app.use(express.methodOverride());
+app.use(app.router);
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.configure(function(){
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'ejs');
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-  app.use(express.cookieParser());
-  app.use(express.session({ secret: 'your secret here' }));
-  app.use(app.router);
-  app.use(express.static(__dirname + '/public'));
+// development only
+if ('development' == app.get('env')) {
+  app.use(express.errorHandler());
+}
+
+app.get('/', routes.index);
+app.get('/users', user.list);
+
+http.createServer(app).listen(app.get('port'), function(){
+  console.log('Express server listening on port ' + app.get('port'));
 });
-
-app.configure('development', function(){
-  app.use(express.errorHandler({ dumpExceptions: true, showStack: true })); 
-});
-
-app.configure('production', function(){
-  app.use(express.errorHandler()); 
-});
-
-// Routes
-
-app.get('/', function(req, res){
-  res.render('index', {
-    title: 'Express'
-  });
-});
-
-app.listen(3000);
-console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
-
-var io = require('socket.io').listen(app);
-
-
-io.sockets.on('connection', function (socket) { // 2
-  log('connected');
-  socket.on('msg send', function (msg) { // 4
-    socket.emit('msg push', msg); // 5
-    socket.broadcast.emit('msg push', msg); // 6
-  });
-  socket.on('disconnect', function() { // 9
-    log('disconnected');
-  });
-});
-
